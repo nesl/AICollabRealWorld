@@ -66,16 +66,20 @@ class mapping:
 if __name__ == '__main__':
     import BEV
     import matplotlib.pyplot as plt
-    orientation = [0, 0, 180, 180, 90, 90, 90, 0, 0, 180]
-    position = [[0, 0], [0, 100], [0, 100], [0, 0], [0, 0], [100, 0], [200, 0], [200, 0], [200, 100], [200, 100]]
+    import os
+    directory_path = "test2"
+    orientation = np.loadtxt(os.path.join(directory_path, "orientation1.csv"))
+    position = np.loadtxt(os.path.join(directory_path, "position1.csv"), delimiter=',')
     intrin_matrix = np.array([[456.390625, 0, 314.60546875], [0, 456.85546875, 250.8203125], [0, 0, 1]])
     map = mapping(15)
-    for i in range(10):
-        depth_frame = np.loadtxt(f'depth_image{i + 1}.csv', delimiter=',')
+    for i in range(2):
+        depth_frame = np.loadtxt(os.path.join(directory_path, f'depth_image{i + 1}.csv'), delimiter=',')
         depth_image = np.array(depth_frame)
         extrin_matrix = BEV.get_extrinsic_matrix(0, math.radians(orientation[i]), 0, position[i][0], 30, position[i][1])
         map.update_point_cloud(depth_image, intrin_matrix, extrin_matrix)
 
+    map.visualize_point_cloud()
+    '''
     map.update_occupancy_grid()
     fig, ax = plt.subplots()
     cax = ax.imshow(map.occupancy_grid_2d, cmap='gray', origin='lower')
@@ -87,3 +91,4 @@ if __name__ == '__main__':
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     plt.show()
+    '''

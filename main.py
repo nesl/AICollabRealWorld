@@ -12,6 +12,9 @@ from irobot_edu_sdk.robots import event, hand_over, Color, Robot, Root, Create3
 from irobot_edu_sdk.music import Note
 import time
 
+directory_path = "test2"
+os.mkdir(directory_path)
+
 if __name__ == '__main__':
     # Create an instance of Frame_Receiver
     frame_receiver = receive.Frame_Receiver()
@@ -59,10 +62,11 @@ if __name__ == '__main__':
             elif userinput == "stats":
                 iR.log_status()
                 continue
-            elif userinput == "frame":
-                print("Get current frame")
             elif userinput == "pcd":
                 map.visualize_point_cloud()
+                continue
+            elif userinput == "save":
+                iR.save(directory_path)
                 continue
 
             time.sleep(3)
@@ -81,7 +85,7 @@ if __name__ == '__main__':
                 map.update_point_cloud(depth_frame, depth_intrin_matrix, depth_extrin_matrix)
                 map.update_occupancy_grid()
 
-                np.savetxt(f'depth_image{i}.csv', depth_frame, delimiter=',')
+                np.savetxt(os.path.join(directory_path, f'depth_image{i}.csv'), depth_frame, delimiter=',')
 
                 fig, ax = plt.subplots()
                 cax = ax.imshow(map.occupancy_grid_2d, cmap='gray', origin='lower')
@@ -110,10 +114,6 @@ if __name__ == '__main__':
                 cv2.imshow("color image", color_frame)
                 depth_frame = cv2.applyColorMap(cv2.convertScaleAbs(depth_frame, alpha=0.5), cv2.COLORMAP_JET)
                 cv2.imshow("depth image", depth_frame)
-                #cv2.imwrite(f"depth_image{i}.png", depth_frame)
-                print("depth intrinsic matrix:", depth_intrin_matrix)
-                print("orientation:", iR.orientation)
-                print("position:", iR.position)
                 i += 1
                 cv2.waitKey(100)
                 plt.pause(1)
