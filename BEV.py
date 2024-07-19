@@ -87,13 +87,14 @@ def get_translation_matrix(R: np.array, x: float, y: float, z: float) -> np.arra
 
 def get_extrinsic_matrix(R: np.array, T: np.array) -> np.array:
     return np.hstack((R, T))
-'''
+
 def get_extrinsic_matrix(roll, pitch, yaw, x, y, z):
     R = get_rotation_matrix(roll, pitch, yaw)
     T = get_translation_matrix(R, x, y, z)
-    return np.hstack((R, T))
-'''
-def get_extrinsic_matrix(roll, pitch, yaw, x, y, z):
+    extrinsic_matrix = np.hstack((R, T))
+    return np.vstack((extrinsic_matrix, [0, 0, 0, 1]))
+
+def get_extrinsic_matrix_v2(roll, pitch, yaw, x, y, z):
     R = get_rotation_matrix(roll, pitch, yaw)
     
     # Create the translation vector

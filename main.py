@@ -11,8 +11,9 @@ from irobot_edu_sdk.backend.bluetooth import Bluetooth
 from irobot_edu_sdk.robots import event, hand_over, Color, Robot, Root, Create3
 from irobot_edu_sdk.music import Note
 import time
+from PIL import Image
 
-directory_path = "test2"
+directory_path = "test5"
 os.mkdir(directory_path)
 
 if __name__ == '__main__':
@@ -25,7 +26,8 @@ if __name__ == '__main__':
     robot = Create3(Bluetooth())
     iR = iRobot.iRobot(robot)
 
-    map = mapping.mapping(15)
+    map = mapping.mapping_o3d(15)
+    #map = mapping.mapping_o3d(15)
 
     @event(robot.when_play)
     async def play(robot):
@@ -65,14 +67,12 @@ if __name__ == '__main__':
             elif userinput == "pcd":
                 map.visualize_point_cloud()
                 continue
-            elif userinput == "save":
-                iR.save(directory_path)
-                continue
 
             time.sleep(3)
             color_frame, depth_frame = frame_receiver.get_current_frame()
             depth_intrin_matrix = frame_receiver.depth_intrin_matrix
-            depth_extrin_matrix = iR.get_extrinsic_matrix()
+            #depth_extrin_matrix = iR.get_extrinsic_matrix()
+            depth_extrin_matrix = iR.get_extrinsic_matrix_o3d()
             if depth_extrin_matrix is None:
                 print('Warning: depth camera extrinsic matrix is None')
             elif color_frame is None:
@@ -82,10 +82,18 @@ if __name__ == '__main__':
             elif depth_frame is None:
                 print('Warning: depth frame is None')
             else:
+                map.update_point_cloud(color_frame, depth_frame, depth_intrin_matrix, depth_extrin_matrix)
+                map.visualize_point_cloud_o3d()
+                np.savetxt(os.path.join(directory_path, f'depth_image{i}.csv'), depth_frame, delimiter=',')
+                cv2.imwrite(os.path.join(directory_path, f'color_image{i}.png'), color_frame)
+                iR.save(directory_path)
+                i += 1
+                '''
                 map.update_point_cloud(depth_frame, depth_intrin_matrix, depth_extrin_matrix)
                 map.update_occupancy_grid()
 
                 np.savetxt(os.path.join(directory_path, f'depth_image{i}.csv'), depth_frame, delimiter=',')
+                cv2.imwrite(os.path.join(directory_path, f'color_image{i}.png'), color_frame)
 
                 fig, ax = plt.subplots()
                 cax = ax.imshow(map.occupancy_grid_2d, cmap='gray', origin='lower')
@@ -100,17 +108,7 @@ if __name__ == '__main__':
                 # Setting labels
                 ax.set_xlabel('X')
                 ax.set_ylabel('Y')
-                '''
-                fig = plt.figure()
-                ax = fig.add_subplot(111, projection='3d')
-                ax.voxels(map.occupancy_grid_3d, edgecolor='k')
-                ax.set_xlim((0, 90))
-                ax.set_ylim((0, 90))
-                ax.set_zlim((0, 90))
-                ax.set_xlabel('X')
-                ax.set_ylabel('Y')
-                ax.set_zlabel('Z')
-                '''
+
                 cv2.imshow("color image", color_frame)
                 depth_frame = cv2.applyColorMap(cv2.convertScaleAbs(depth_frame, alpha=0.5), cv2.COLORMAP_JET)
                 cv2.imshow("depth image", depth_frame)
@@ -118,5 +116,6 @@ if __name__ == '__main__':
                 cv2.waitKey(100)
                 plt.pause(1)
                 print("Processing the latest frames...")
+                '''
                 
     robot.play()

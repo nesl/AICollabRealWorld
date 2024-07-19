@@ -32,7 +32,6 @@ class iRobot:
 
         # 0 for default, 1 for red, 2 for green, 3 for blue
         self.lights = [0]
-        self._save_index = 1
     
     async def set_lights(self, lights):
         if lights == 0:
@@ -47,7 +46,7 @@ class iRobot:
             print("Error: invalid argument \"light\", must be 1, 2, 3, or 4")
             return None
         print(f"iRobot: set lights to {LIGHT_COLOR[lights]}")
-        self.lights.append(lights[-1])
+        self.lights.append(lights)
         self.position.append(self.position[-1])
         self.orientation.append(self.orientation[-1])
     
@@ -95,11 +94,11 @@ class iRobot:
         self.lights.append(self.lights[-1])
     
     def _forward(self, distance):
-        x_displacement = distance * np.sin(self.orientation / 180 * np.pi)
-        y_displacement = distance * np.cos(self.orientation / 180 * np.pi)
+        x_displacement = distance * np.sin(self.orientation[-1] / 180 * np.pi)
+        y_displacement = distance * np.cos(self.orientation[-1] / 180 * np.pi)
         self.position.append([self.position[-1][0] + x_displacement, self.position[-1][1] + y_displacement])
-        self.orientation.append([self.orientation[-1]])
-        self.lights.append([self.lights[-1]])
+        self.orientation.append(self.orientation[-1])
+        self.lights.append(self.lights[-1])
     
     def log_status(self):
         print(">>----------------------------------------<<")
@@ -108,14 +107,15 @@ class iRobot:
         print(">>----------------------------------------<<")
 
     def get_extrinsic_matrix(self):
-        print(self.position[-1][0], self.position[-1][1])
         return BEV.get_extrinsic_matrix(0, math.radians(self.orientation[-1]), 0, self.position[-1][0], 0, self.position[-1][1])
     
+    def get_extrinsic_matrix_o3d(self):
+        return BEV.get_extrinsic_matrix(0, -math.radians(self.orientation[-1]), 0, self.position[-1][0] / 1100, 30, self.position[-1][1] / 1100)
+    
     def save(self, dir):
-        np.savetxt(os.path.join(dir, f'position{self._save_index}.csv'), self.position[1:], delimiter=',')
-        np.savetxt(os.path.join(dir, f'orientation{self._save_index}.csv'), self.orientation[1:], delimiter=',')
-        np.savetxt(os.path.join(dir, f'light{self._save_index}.csv'), self.lights[1:], delimiter=',')
-        self._save_index += 1
+        np.savetxt(os.path.join(dir, f'position.csv'), self.position[1:], delimiter=',')
+        np.savetxt(os.path.join(dir, f'orientation.csv'), self.orientation[1:], delimiter=',')
+        np.savetxt(os.path.join(dir, f'light.csv'), self.lights[1:], delimiter=',')
 
     
 
