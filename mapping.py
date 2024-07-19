@@ -79,7 +79,7 @@ class mapping_o3d:
         self.voxel_size = voxel_size
     
     def update_point_cloud(self, color_image, depth_image, intrinsic_matrix, extrinsic_matrix,
-                           nb_neighbors=20, std_ratio=1.5, nb_points=10, radius=0.0):
+                           nb_neighbors=20, std_ratio=1.5, nb_points=20, radius=0.02):
         depth_image = depth_image.astype(np.float32)
         depth_height, depth_width = depth_image.shape
         color_image = cv2.resize(color_image, (depth_width, depth_height), interpolation=cv2.INTER_LINEAR)
@@ -99,8 +99,8 @@ class mapping_o3d:
             extrinsic_matrix
         )
         pcd_downsampled = pcd.voxel_down_sample(voxel_size=0.005)
-        stats_cl, stats_ind = pcd_downsampled.remove_statistical_outlier(nb_neighbors=20, std_ratio=1.5)
-        radius_cl, radius_ind = pcd_downsampled.remove_radius_outlier(nb_points=10, radius=0.02)
+        stats_cl, stats_ind = pcd_downsampled.remove_statistical_outlier(nb_neighbors=nb_neighbors, std_ratio=std_ratio)
+        radius_cl, radius_ind = pcd_downsampled.remove_radius_outlier(nb_points=nb_points, radius=radius)
         intersection_ind = [value for value in stats_ind if value in radius_ind]
         if self.point_cloud_o3d is None:
             self.point_cloud_o3d = pcd_downsampled.select_by_index(intersection_ind)
@@ -122,16 +122,20 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import os
     from PIL import Image
-    directory_path = "test4"
-    orientation = np.loadtxt(os.path.join(directory_path, "orientation1.csv"))
-    position = np.loadtxt(os.path.join(directory_path, "position1.csv"), delimiter=',')
+    directory_path = "test7"
+    orientation = np.loadtxt(os.path.join(directory_path, "orientation.csv"))
+    position = np.loadtxt(os.path.join(directory_path, "position.csv"), delimiter=',')
     intrin_matrix = np.array([[456.390625, 0, 314.60546875], [0, 456.85546875, 250.8203125], [0, 0, 1]])
 
     map = mapping_o3d(15)
     for i in range(orientation.shape[0]):
         depth_frame = np.loadtxt(os.path.join(directory_path, f'depth_image{i + 1}.csv'), delimiter=',')
         depth_image = np.array(depth_frame)
-        extrin_matrix = BEV.get_extrinsic_matrix(0, -math.radians(orientation[i]), 0, position[i][0] / 1100, 30, position[i][1] / 1100)
+        x_displacement = np.sin(-math.radians(orientation[i])) * 7 + np.cos(-math.radians(orientation[i])) * 4
+        y_displacement = np.cos(-math.radians(orientation[i])) * 7 + np.sin(-math.radians(orientation[i])) * 4
+        #x_displacement = 0
+        #y_displacement = 0
+        extrin_matrix = BEV.get_extrinsic_matrix(0, -math.radians(orientation[i]), 0, (position[i][1] + x_displacement) / 1100, 30, (position[i][0] + y_displacement) / 1100)
 
         color_image = Image.open(os.path.join(directory_path, f"color_image{i+1}.png"))
         color_image_array = np.array(color_image)

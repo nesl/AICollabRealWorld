@@ -13,7 +13,7 @@ from irobot_edu_sdk.music import Note
 import time
 from PIL import Image
 
-directory_path = "test5"
+directory_path = "test7"
 os.mkdir(directory_path)
 
 if __name__ == '__main__':
