@@ -2,7 +2,7 @@ import receive
 import mapping
 import cv2
 import matplotlib.pyplot as plt
-import iRobot
+import iRobot_create3
 import os
 import re
 import threading
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     receiving_thread.start()
     
     robot = Create3(Bluetooth())
-    iR = iRobot.iRobot(robot)
+    iR = iRobot_create3.iRobot_create3(robot)
 
     map = mapping.mapping_o3d(15)
     #map = mapping.mapping_o3d(15)
@@ -42,16 +42,16 @@ if __name__ == '__main__':
             elif userinput == "b" or userinput == "back":
                 await iR.turn_back()
             elif re.match(r'^l\d+$', userinput) or re.match(r'^left\d+$', userinput):
-                angle = iRobot.parse_integers_from_string(userinput)[0]
+                angle = iRobot_create3.parse_integers_from_string(userinput)[0]
                 await iR.turn_left(angle)
             elif re.match(r'^r\d+$', userinput) or re.match(r'^right\d+$', userinput):
-                angle = iRobot.parse_integers_from_string(userinput)[0]
+                angle = iRobot_create3.parse_integers_from_string(userinput)[0]
                 await iR.turn_right(angle)
             elif re.match(r'^f\d+$', userinput) or re.match(r'^forward\d+$', userinput):
-                distance = iRobot.parse_integers_from_string(userinput)[0]
+                distance = iRobot_create3.parse_integers_from_string(userinput)[0]
                 await iR.forward_by_distance(distance)
             elif re.match(r'^b\d+$', userinput) or re.match(r'^backward\d+$', userinput):
-                distance = iRobot.parse_integers_from_string(userinput)[0]
+                distance = iRobot_create3.parse_integers_from_string(userinput)[0]
                 await iR.backward_by_distance(distance)
             elif userinput == "white":
                 await iR.set_lights(0)
@@ -109,7 +109,7 @@ if __name__ == '__main__':
                 ax.set_xlabel('X')
                 ax.set_ylabel('Y')
 
-                cv2.imshow("color image", color_frame)
+                cv2.imshow("color image", color_frame) 
                 depth_frame = cv2.applyColorMap(cv2.convertScaleAbs(depth_frame, alpha=0.5), cv2.COLORMAP_JET)
                 cv2.imshow("depth image", depth_frame)
                 i += 1

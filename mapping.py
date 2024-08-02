@@ -76,7 +76,9 @@ class mapping_o3d:
         self.point_cloud_o3d = None #type o3d pointcloud
         self.occupancy_grid_3d = None
         self.occupancy_grid_2d = None
-        self.voxel_size = voxel_size
+        self.voxel_size = voxel_size / 1100
+        self.min_height = -20 / 1100
+        self.max_height = 270 / 1100
     
     def update_point_cloud(self, color_image, depth_image, intrinsic_matrix, extrinsic_matrix,
                            nb_neighbors=20, std_ratio=1.5, nb_points=20, radius=0.02):
@@ -108,7 +110,23 @@ class mapping_o3d:
             self.point_cloud_o3d += pcd_downsampled.select_by_index(intersection_ind)
         self.point_cloud_o3d = self.point_cloud_o3d.voxel_down_sample(voxel_size=0.005)
         
+    def update_occupancy_map(self):
+        point_cloud_array = np.asarray(self.point_cloud_o3d.points)
+        min_bound = np.min(point_cloud_array, axis=0)
+        max_bound = np.max(point_cloud_array, axis=0)
+        grid_shape = np.ceil((max_bound - min_bound) / self.voxel_size).astype(int)
+        occupancy_grid = np.zeros(grid_shape, dtype=int)
+        voxel_indices = ((point_cloud_array - min_bound) / self.voxel_size).astype(int)
+        flat_indices = np.ravel_multi_index(voxel_indices.T, occupancy_grid.shape)
+        counts = np.bincount(flat_indices, minlength=occupancy_grid.size)
+        occupancy_grid = counts.reshape(occupancy_grid.shape)
+        occupancy_grid = occupancy_grid > 4 # Apply a threshold to determine occupied voxels
+        occupancy_grid = occupancy_grid.transpose(0, 2, 1)
+        occupancy_grid = occupancy_grid[::-1, :, ::-1]
         
+        self.occupancy_grid_3d = occupancy_grid
+        self.occupancy_grid_2d = occupancy_grid[:, :, 6]
+
     def get_point_cloud_as_numpy_array(self):
         return np.asarray(self.point_cloud_o3d.points)
 
@@ -122,7 +140,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import os
     from PIL import Image
-    directory_path = "test7"
+    directory_path = "test16"
     orientation = np.loadtxt(os.path.join(directory_path, "orientation.csv"))
     position = np.loadtxt(os.path.join(directory_path, "position.csv"), delimiter=',')
     intrin_matrix = np.array([[456.390625, 0, 314.60546875], [0, 456.85546875, 250.8203125], [0, 0, 1]])
@@ -133,8 +151,6 @@ if __name__ == '__main__':
         depth_image = np.array(depth_frame)
         x_displacement = np.sin(-math.radians(orientation[i])) * 7 + np.cos(-math.radians(orientation[i])) * 4
         y_displacement = np.cos(-math.radians(orientation[i])) * 7 + np.sin(-math.radians(orientation[i])) * 4
-        #x_displacement = 0
-        #y_displacement = 0
         extrin_matrix = BEV.get_extrinsic_matrix(0, -math.radians(orientation[i]), 0, (position[i][1] + x_displacement) / 1100, 30, (position[i][0] + y_displacement) / 1100)
 
         color_image = Image.open(os.path.join(directory_path, f"color_image{i+1}.png"))
@@ -142,8 +158,20 @@ if __name__ == '__main__':
 
         depth_image_array = np.loadtxt(os.path.join(directory_path, f"depth_image{i+1}.csv"), delimiter=',')
         map.update_point_cloud(color_image_array, depth_image_array, intrin_matrix, extrin_matrix)
+        print(i, "/", orientation.shape[0])
     
     map.visualize_point_cloud_o3d()
+    map.update_occupancy_map()
+    fig, ax = plt.subplots()
+    cax = ax.imshow(map.occupancy_grid_2d, cmap='gray', origin='lower')
+
+    # Adding grid lines
+    ax.grid(True, which='both', color='k', linestyle='-', linewidth=0.5)
+    ax.set_xticks(np.arange(0.5, map.occupancy_grid_2d.shape[1], 1))
+    ax.set_yticks(np.arange(0.5, map.occupancy_grid_2d.shape[0], 1))
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    plt.show()
 
 
 
